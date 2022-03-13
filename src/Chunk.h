@@ -18,6 +18,7 @@ class Chunk
 		unsigned int VBOMesh;
 		unsigned int facesCount;
         Chunk(int x, int z, int seed);
+		~Chunk();
         void generateMesh();
 		void generateVBO();
         enum blocks

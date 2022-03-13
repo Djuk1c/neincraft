@@ -10,7 +10,7 @@ class World
 {
     public:
 		const int CHUNKS_NUM = 6;
-		std::map<std::pair<int, int>, Chunk> worldChunks;
+		std::map<std::pair<int, int>, Chunk*> worldChunks;
         void generateWorld(glm::vec3 cameraPos);
 		bool addChunkAtLocation(int xPos, int zPos);
 		void addNearbyChunks(glm::vec3 location);

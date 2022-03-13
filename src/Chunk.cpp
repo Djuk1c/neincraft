@@ -13,19 +13,10 @@ Chunk::Chunk(int x, int z, int seed)
         {
             for (int y = 0; y < CHUNK_SIZE; y++)
             {
-                chunk[x][y][z] = block_air;
-            }
-        }
-    }
-
-	// Add water to 0y blocks
-    for (int x = 0; x < CHUNK_SIZE; x++)
-    {
-        for (int z = 0; z < CHUNK_SIZE; z++)
-        {
-            for (int y = 0; y < 1; y++)
-            {
-                chunk[x][y][z] = block_water;
+				if (y == 0)
+					chunk[x][y][z] = block_water;
+				else
+					chunk[x][y][z] = block_air;
             }
         }
     }
@@ -53,6 +44,12 @@ Chunk::Chunk(int x, int z, int seed)
     }
 }
 
+Chunk::~Chunk()
+{
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBOMesh);
+	std::cout << "Deleted chunk X:" << xPos << " Z:" << zPos << std::endl;
+}
 
 void Chunk::generateMesh()
 {

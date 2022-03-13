@@ -14,9 +14,9 @@ void World::generateWorld(glm::vec3 cameraPos)
     {
         for (int z = zPos - CHUNKS_NUM; z < zPos + CHUNKS_NUM; z++)
         {
-            Chunk chunk(x, z, seed);
-            chunk.generateMesh();
-			chunk.generateVBO();
+            Chunk* chunk = new Chunk(x, z, seed);
+            chunk->generateMesh();
+			chunk->generateVBO();
 			worldChunks.insert(std::make_pair(std::make_pair(x, z), chunk));
         }
     }
@@ -34,7 +34,13 @@ void World::addNearbyChunks(glm::vec3 location)
 	{
 		for (int z = -CHUNKS_NUM; z < CHUNKS_NUM; z++)
 		{
-			addChunkAtLocation(xPos+x, zPos+z);
+			if (addChunkAtLocation(xPos+x, zPos+z))
+			{
+				// Hmmmmmm
+				int a;
+				glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, &a);
+				//std::cout << a << std::endl;
+			}
 		}
 	}
 }
@@ -44,16 +50,16 @@ bool World::addChunkAtLocation(int xPos, int zPos)
 	if (worldChunks.find(std::make_pair(xPos, zPos)) != worldChunks.end())
 			return false;
 
-	Chunk chunk(xPos, zPos, seed);
-	chunk.generateMesh();
-	chunk.generateVBO();
+	Chunk* chunk = new Chunk(xPos, zPos, seed);
+	chunk->generateMesh();
+	chunk->generateVBO();
 	worldChunks.insert(std::make_pair(std::make_pair(xPos, zPos), chunk));
 	return true;
 }
 
 void World::deleteFarChunks(int xPos, int zPos)
 {
-	std::map<std::pair<int, int>, Chunk>::iterator it = worldChunks.begin();
+	std::map<std::pair<int, int>, Chunk*>::iterator it = worldChunks.begin();
 	while (it != worldChunks.end())
 	{
 		int x = std::abs(xPos);
@@ -61,10 +67,9 @@ void World::deleteFarChunks(int xPos, int zPos)
 		int chunkX = std::abs(it->first.first);
 		int chunkZ = std::abs(it->first.second);
 
-		if (std::abs(x - chunkX) > CHUNKS_NUM+1 || std::abs(z - chunkZ) > CHUNKS_NUM+1)
+		if (std::abs(x - chunkX) > CHUNKS_NUM || std::abs(z - chunkZ) > CHUNKS_NUM)
 		{
-			glDeleteVertexArrays(1, &it->second.VAO);
-			glDeleteBuffers(1, &it->second.VBOMesh);
+			delete it->second;
 			worldChunks.erase(it++);
 		}
 		else

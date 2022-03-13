@@ -101,12 +101,12 @@ int main()
 		
 		// Render world
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		std::map<std::pair<int, int>, Chunk>::iterator it = world.worldChunks.begin();
+		std::map<std::pair<int, int>, Chunk*>::iterator it = world.worldChunks.begin();
 		while (it != world.worldChunks.end())
 		{
-			glBindVertexArray(it->second.VAO);
+			glBindVertexArray(it->second->VAO);
 			// 6 vertices / face (should probably implement EBO, dis waste of memory (good enough!))
-			glDrawArrays(GL_TRIANGLES, 0, it->second.facesCount*6);
+			glDrawArrays(GL_TRIANGLES, 0, it->second->facesCount*6);
 			it++;
 		}
 
