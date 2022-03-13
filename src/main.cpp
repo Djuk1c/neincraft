@@ -11,7 +11,6 @@
 #include "camera.h"
 
 #include "window.h"
-#include "cubeVertexData.h"
 #include "World.h"
 #include "Chunk.h"
 
