@@ -3,8 +3,10 @@
 void World::generateWorld(glm::vec3 cameraPos)
 {
 	srand(time(NULL));
-	seed = rand()%1337420;
-
+	noise.SetSeed(rand() % 1337420);
+	noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+	noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+	//noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     // Get current player position in chunk coords
     int xPos = (int)ceil(cameraPos.x / 16);
     int zPos = (int)ceil(cameraPos.z / 16);
@@ -14,7 +16,7 @@ void World::generateWorld(glm::vec3 cameraPos)
     {
         for (int z = zPos - CHUNKS_NUM; z < zPos + CHUNKS_NUM; z++)
         {
-            Chunk* chunk = new Chunk(x, z, seed);
+            Chunk* chunk = new Chunk(x, z, noise);
             chunk->generateMesh();
 			chunk->generateVBO();
 			worldChunks.insert(std::make_pair(std::make_pair(x, z), chunk));
@@ -50,7 +52,7 @@ bool World::addChunkAtLocation(int xPos, int zPos)
 	if (worldChunks.find(std::make_pair(xPos, zPos)) != worldChunks.end())
 			return false;
 
-	Chunk* chunk = new Chunk(xPos, zPos, seed);
+	Chunk* chunk = new Chunk(xPos, zPos, noise);
 	chunk->generateMesh();
 	chunk->generateVBO();
 	worldChunks.insert(std::make_pair(std::make_pair(xPos, zPos), chunk));

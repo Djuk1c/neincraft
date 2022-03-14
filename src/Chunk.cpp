@@ -1,9 +1,8 @@
 #include "Chunk.h"
 
-Chunk::Chunk(int x, int z, int seed)
+Chunk::Chunk(int x, int z, FastNoiseLite &noise)
 {
 	facesCount = 0;
-	Simplex::seed(seed);	// Usporava?
     xPos = x;
     zPos = z;
     // Fill the chunk with empty blocks
@@ -11,7 +10,7 @@ Chunk::Chunk(int x, int z, int seed)
     {
         for (int z = 0; z < CHUNK_SIZE; z++)
         {
-            for (int y = 0; y < CHUNK_SIZE; y++)
+            for (int y = 0; y < CHUNK_HEIGHT; y++)
             {
 				if (y == 0)
 					chunk[x][y][z] = block_water;
@@ -26,18 +25,12 @@ Chunk::Chunk(int x, int z, int seed)
     {
         for (int z = 0; z < CHUNK_SIZE; z++)
         {
-            for (int y = 0; y < CHUNK_SIZE; y++)
+            for (int y = 0; y < CHUNK_HEIGHT; y++)
             {
-				float smoothness = 64.0f + 16.0f;
-                float val = Simplex::noise(glm::vec2(((float)x + (CHUNK_SIZE * xPos)) / smoothness, ((float)z + (CHUNK_SIZE * zPos)) / smoothness));
-				for (int i = 1; i < 20; i++)
-				{
-					val += (Simplex::noise(glm::vec2(((float)x + 64*i + (CHUNK_SIZE * xPos)) / smoothness/2, ((float)z + 64*i + (CHUNK_SIZE * zPos)) / smoothness/2))) / 2.0f;
-				}
-				val -= 1;
-				val = val * 2 - 1;
-                val *= 4;     // Add more height variation
-                if (val + y < -4)    // Height chunka
+				float smoothness = 2.0f;
+				float val = noise.GetNoise(((float)x + (CHUNK_SIZE * xPos)) / smoothness, ((float)z + (CHUNK_SIZE * zPos)) / smoothness);
+                val *= 50;     // Add more height variation
+                if (val + y < 4)    // Height chunka
                     chunk[x][y][z] = block_dirt;
             }
         }
@@ -71,7 +64,7 @@ void Chunk::generateMesh()
     {
         for (int z = 0; z < CHUNK_SIZE; z++)
         {
-            for (int y = 0; y < CHUNK_SIZE; y++)
+            for (int y = 0; y < CHUNK_HEIGHT; y++)
             {
                 if (chunk[x][y][z] != block_air)
                 {
@@ -79,7 +72,7 @@ void Chunk::generateMesh()
                     if (x > 0) newCube.leftface = chunk[x - 1][y][z] == 0;
                     if (x < CHUNK_SIZE - 1) newCube.rightface = chunk[x + 1][y][z] == 0;
                     if (y > 0) newCube.bottomface = chunk[x][y - 1][z] == 0;
-                    if (y < CHUNK_SIZE - 1) newCube.topface = chunk[x][y + 1][z] == 0;
+                    if (y < CHUNK_HEIGHT - 1) newCube.topface = chunk[x][y + 1][z] == 0;
                     if (z > 0) newCube.frontface = chunk[x][y][z - 1] == 0;
                     if (z < CHUNK_SIZE - 1) newCube.backface = chunk[x][y][z + 1] == 0;
 

@@ -4,9 +4,10 @@
 #include <math.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "Simplex.h"
+#include "FastNoiseLite.h"
 
-#define CHUNK_SIZE 16
+#define CHUNK_SIZE 		16
+#define CHUNK_HEIGHT	64
 
 using namespace std;
 
@@ -17,7 +18,7 @@ class Chunk
 		unsigned int VAO;
 		unsigned int VBOMesh;
 		unsigned int facesCount;
-        Chunk(int x, int z, int seed);
+        Chunk(int x, int z, FastNoiseLite &noise);
 		~Chunk();
         void generateMesh();
 		void generateVBO();
@@ -25,7 +26,7 @@ class Chunk
         {
             block_air, block_dirt, block_water
         };
-        int chunk[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+        int chunk[CHUNK_SIZE][128][CHUNK_SIZE];
         int xPos, zPos;
 
     private:

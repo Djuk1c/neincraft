@@ -1,3 +1,2 @@
 Precalculate perlin noise for X chunks
-Increase chunk height
 Play around with perlin parameters more to make it look more natural

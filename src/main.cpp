@@ -15,8 +15,8 @@
 #include "Chunk.h"
 
 // Constants
-const int SCREEN_WIDTH = 1280;
-const int SCREEN_HEIGHT = 720;
+const int SCREEN_WIDTH = 1600;
+const int SCREEN_HEIGHT = 900;
 
 // Forward delcarations
 void calculateDeltaTime(double time);
@@ -34,7 +34,7 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 // Camera
-Camera camera(glm::vec3(0.0f, 10.0f, 10.0f));
+Camera camera(glm::vec3(0.0f, 150.0f, 10.0f));
 float lastX = (float)SCREEN_WIDTH/2, lastY = (float)SCREEN_HEIGHT/2;
 bool firstMouse = true;
 
