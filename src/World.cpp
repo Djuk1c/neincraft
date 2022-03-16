@@ -16,6 +16,7 @@ void World::generateWorld(glm::vec3 cameraPos)
 
 void World::addNearbyChunks(glm::vec3 location)
 {
+	bool newChunks = false;
     // Get current player position in chunk coords
     int xPos = (int)ceil(location.x / 16);
     int zPos = (int)ceil(location.z / 16);
@@ -26,12 +27,16 @@ void World::addNearbyChunks(glm::vec3 location)
 	{
 		for (int z = -CHUNKS_NUM; z < CHUNKS_NUM; z++)
 		{
-			addChunkAtLocation(xPos+x, zPos+z);
+			if (addChunkAtLocation(xPos+x, zPos+z))
+				newChunks = true;
 		}
 	}
-	generateCubeDatas();
-	fillConnectingCubes();
-	generateMeshes();
+	if (newChunks)
+	{
+		generateCubeDatas();
+		fillConnectingCubes();
+		generateMeshes();
+	}
 }
 
 bool World::addChunkAtLocation(int xPos, int zPos)
