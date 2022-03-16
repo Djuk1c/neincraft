@@ -3,6 +3,10 @@
 Chunk::Chunk(int x, int z, FastNoiseLite &noise)
 {
 	facesCount = 0;
+	VAO = 0;
+	VBO = 0;
+	generatedData = false;
+	filledConnectingCubes = false;
     xPos = x;
     zPos = z;
     // Fill the chunk with empty blocks
@@ -29,8 +33,8 @@ Chunk::Chunk(int x, int z, FastNoiseLite &noise)
             {
 				float smoothness = 2.0f;
 				float val = noise.GetNoise(((float)x + (CHUNK_SIZE * xPos)) / smoothness, ((float)z + (CHUNK_SIZE * zPos)) / smoothness);
-                val *= 50;     // Add more height variation
-                if (val + y < 4)    // Height chunka
+                val *= 50;     // Add more height
+                if (val + y < 4)
                     chunk[x][y][z] = block_dirt;
             }
         }
@@ -40,26 +44,12 @@ Chunk::Chunk(int x, int z, FastNoiseLite &noise)
 Chunk::~Chunk()
 {
 	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBOMesh);
+	glDeleteBuffers(1, &VBO);
 	std::cout << "Deleted chunk X:" << xPos << " Z:" << zPos << std::endl;
 }
 
-void Chunk::generateMesh()
+void Chunk::generateCubeData()
 {
-	class cubeData
-	{
-		public:
-			bool backface, bottomface, leftface, frontface, topface, rightface;
-			cubeData()
-			{
-				backface = true;
-				bottomface = true;
-				leftface = true;
-				frontface = true;
-				topface = true;
-				rightface = true;
-			}
-	};
     for (int x = 0; x < CHUNK_SIZE; x++)
     {
         for (int z = 0; z < CHUNK_SIZE; z++)
@@ -71,16 +61,84 @@ void Chunk::generateMesh()
                     cubeData newCube;
                     if (x > 0) newCube.leftface = chunk[x - 1][y][z] == 0;
                     if (x < CHUNK_SIZE - 1) newCube.rightface = chunk[x + 1][y][z] == 0;
-                    if (y > 0) newCube.bottomface = chunk[x][y - 1][z] == 0;
-                    if (y < CHUNK_HEIGHT - 1) newCube.topface = chunk[x][y + 1][z] == 0;
                     if (z > 0) newCube.frontface = chunk[x][y][z - 1] == 0;
                     if (z < CHUNK_SIZE - 1) newCube.backface = chunk[x][y][z + 1] == 0;
+                    if (y > 0) newCube.bottomface = chunk[x][y - 1][z] == 0;
+                    if (y < CHUNK_HEIGHT - 1) newCube.topface = chunk[x][y + 1][z] == 0;
 
-                    addCube(newCube.backface, newCube.bottomface, newCube.leftface, newCube.frontface, newCube.topface, newCube.rightface, x + (xPos * CHUNK_SIZE), y, z + (zPos * CHUNK_SIZE), chunk[x][y][z], chunkData);
+					data[x][y][z] = newCube;
                 }
             }
         }
     }
+	generatedData = true;
+}
+
+void Chunk::fillConnectingCubes(std::map<std::pair<int, int>, Chunk*> &worldChunks)
+{
+	bool left  = worldChunks.find(std::make_pair(xPos-1, zPos)) != worldChunks.end();
+	bool right = worldChunks.find(std::make_pair(xPos+1, zPos)) != worldChunks.end();
+	bool front = worldChunks.find(std::make_pair(xPos, zPos-1)) != worldChunks.end();
+	bool back  = worldChunks.find(std::make_pair(xPos, zPos+1)) != worldChunks.end();
+	
+    for (int x = 0; x < CHUNK_SIZE; x++)
+    {
+        for (int z = 0; z < CHUNK_SIZE; z++)
+        {
+            for (int y = 0; y < CHUNK_HEIGHT; y++)
+            {
+				if (chunk[x][y][z] == block_dirt)
+				{
+					if (x == CHUNK_SIZE-1 && right)
+					{
+						if (worldChunks.at({xPos+1, zPos})->chunk[0][y][z] == block_air)
+						{
+							data[x][y][z].rightface = true;
+						}
+					}	
+					if (x == 0 && left)
+					{
+						if (worldChunks.at({xPos-1, zPos})->chunk[CHUNK_SIZE-1][y][z] == block_air)
+						{
+							data[x][y][z].leftface = true;
+						}
+					}	
+					if (z == CHUNK_SIZE-1 && back)
+					{
+						if (worldChunks.at({xPos, zPos+1})->chunk[x][y][0] == block_air)
+						{
+							data[x][y][z].backface = true;
+						}
+					}	
+					if (z == 0 && front)
+					{
+						if (worldChunks.at({xPos, zPos-1})->chunk[x][y][CHUNK_SIZE-1] == block_air)
+						{
+							data[x][y][z].frontface = true;
+						}
+					}	
+				}
+			}
+		}
+	}
+
+	filledConnectingCubes = true;
+}
+
+void Chunk::generateMesh()
+{
+
+    for (int x = 0; x < CHUNK_SIZE; x++)
+    {
+        for (int z = 0; z < CHUNK_SIZE; z++)
+        {
+            for (int y = 0; y < CHUNK_HEIGHT; y++)
+            {
+                    addCube(data[x][y][z].backface, data[x][y][z].bottomface, data[x][y][z].leftface, data[x][y][z].frontface, data[x][y][z].topface, data[x][y][z].rightface, x + (xPos * CHUNK_SIZE), y, z + (zPos * CHUNK_SIZE), chunk[x][y][z], chunkData);
+			}
+		}
+	}
+	generateVBO();
 }
 
 void Chunk::generateVBO()
@@ -88,8 +146,8 @@ void Chunk::generateVBO()
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 	// Create Vertex Buffer Objects
-	glGenBuffers(1, &VBOMesh);
-	glBindBuffer(GL_ARRAY_BUFFER, VBOMesh);
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, chunkData.size() * sizeof(float), &chunkData.front(), GL_STATIC_DRAW);
 	// Link
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(0 * sizeof(float)));   // Pos

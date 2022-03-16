@@ -34,7 +34,7 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 // Camera
-Camera camera(glm::vec3(0.0f, 150.0f, 10.0f));
+Camera camera(glm::vec3(256.0f, 100.0f, 256.0f));
 float lastX = (float)SCREEN_WIDTH/2, lastY = (float)SCREEN_HEIGHT/2;
 bool firstMouse = true;
 
@@ -73,6 +73,7 @@ int main()
     glUseProgram(shaderProgram);
     glClearColor(0.3f,0.7f,0.8f, 1.0f);
     glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texAtlas);

@@ -12,9 +12,12 @@ class World
 		const int CHUNKS_NUM = 8;
 		std::map<std::pair<int, int>, Chunk*> worldChunks;
         void generateWorld(glm::vec3 cameraPos);
-		bool addChunkAtLocation(int xPos, int zPos);
 		void addNearbyChunks(glm::vec3 location);
     private:
+		bool addChunkAtLocation(int xPos, int zPos);
 		void deleteFarChunks(int xPos, int zPos);
+		void generateCubeDatas();
+		void fillConnectingCubes();
+		void generateMeshes();
 		FastNoiseLite noise;
 };
