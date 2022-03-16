@@ -1,6 +1,5 @@
 # Neincraft
-Minecraft clone written with C++ & OpenGL.\ 
-In development. 
+Minecraft clone written with C++ & OpenGL, in development. 
 ![image](https://i.imgur.com/0zWcM7b.png)\
 ![image](https://i.imgur.com/a5hFmsd.png)
 
