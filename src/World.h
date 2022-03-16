@@ -16,8 +16,5 @@ class World
     private:
 		bool addChunkAtLocation(int xPos, int zPos);
 		void deleteFarChunks(int xPos, int zPos);
-		void generateCubeDatas();
-		void fillConnectingCubes();
-		void generateMeshes();
 		FastNoiseLite noise;
 };

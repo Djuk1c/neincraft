@@ -18,8 +18,6 @@ Chunk::Chunk(int x, int z, FastNoiseLite &noise)
 	facesCount = 0;
 	VAO = 0;
 	VBO = 0;
-	generatedData = false;
-	filledConnectingCubes = false;
     xPos = x;
     zPos = z;
     // Fill the chunk with empty blocks
@@ -80,16 +78,10 @@ void Chunk::generateCubeData()
             }
         }
     }
-	generatedData = true;
 }
 
-void Chunk::fillConnectingCubes(std::map<std::pair<int, int>, Chunk*> &worldChunks)			// TODO: Rewrite this clusterfuck please
+void Chunk::fillConnectingCubes()
 {
-	bool left  = worldChunks.find(std::make_pair(xPos-1, zPos)) != worldChunks.end();
-	bool right = worldChunks.find(std::make_pair(xPos+1, zPos)) != worldChunks.end();
-	bool front = worldChunks.find(std::make_pair(xPos, zPos-1)) != worldChunks.end();
-	bool back  = worldChunks.find(std::make_pair(xPos, zPos+1)) != worldChunks.end();
-	
     for (int x = 0; x < CHUNK_SIZE; x++)
     {
         for (int z = 0; z < CHUNK_SIZE; z++)
@@ -98,56 +90,18 @@ void Chunk::fillConnectingCubes(std::map<std::pair<int, int>, Chunk*> &worldChun
             {
 				if (chunk[x][y][z] == block_dirt)
 				{
-					if (x == CHUNK_SIZE-1)
-					{
-						if (right && worldChunks.at({xPos+1, zPos})->chunk[0][y][z] == block_air)
-						{
-							data[x][y][z].rightface = true;
-						}
-						else if (generatePerlin(0, y, z, xPos+1, zPos) == block_air)
-						{
-							data[x][y][z].rightface = true;
-						}
-					}	
-					if (x == 0)
-					{
-						if (left && worldChunks.at({xPos-1, zPos})->chunk[CHUNK_SIZE-1][y][z] == block_air)
-						{
-							data[x][y][z].leftface = true;
-						}
-						else if (generatePerlin(CHUNK_SIZE-1, y, z, xPos-1, zPos) == block_air)
-						{
-							data[x][y][z].leftface = true;
-						}
-					}	
-					if (z == CHUNK_SIZE-1)
-					{
-						if (back && worldChunks.at({xPos, zPos+1})->chunk[x][y][0] == block_air)
-						{
-							data[x][y][z].backface = true;
-						}
-						else if (generatePerlin(x, y, 0, xPos, zPos+1) == block_air)
-						{
-							data[x][y][z].backface = true;
-						}
-					}	
-					if (z == 0)
-					{
-						if (front && worldChunks.at({xPos, zPos-1})->chunk[x][y][CHUNK_SIZE-1] == block_air)
-						{
-							data[x][y][z].frontface = true;
-						}
-						else if (generatePerlin(x, y, CHUNK_SIZE-1, xPos, zPos-1) == block_air)
-						{
-							data[x][y][z].frontface = true;
-						}
-					}	
+					if (x == CHUNK_SIZE-1 && generatePerlin(0, y, z, xPos+1, zPos) == block_air)
+						data[x][y][z].rightface = true;
+					if (x == 0 && generatePerlin(CHUNK_SIZE-1, y, z, xPos-1, zPos) == block_air)
+						data[x][y][z].leftface = true;
+					if (z == CHUNK_SIZE-1 && generatePerlin(x, y, 0, xPos, zPos+1) == block_air)
+						data[x][y][z].backface = true;
+					if (z == 0 && generatePerlin(x, y, CHUNK_SIZE-1, xPos, zPos-1) == block_air)
+						data[x][y][z].frontface = true;
 				}
 			}
 		}
 	}
-
-	filledConnectingCubes = true;
 }
 
 void Chunk::generateMesh()

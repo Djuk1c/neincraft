@@ -32,16 +32,15 @@ class Chunk
         Chunk(int x, int z, FastNoiseLite &noise);
 		~Chunk();
 		void generateCubeData();
-		void fillConnectingCubes(std::map<std::pair<int, int>, Chunk*> &worldChunks);
+		void fillConnectingCubes();
         void generateMesh();
 		void generateVBO();
 
         int chunk[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE];
 		cubeData data[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE];
-        int xPos, zPos;
-		bool generatedData;
-		bool filledConnectingCubes;
+
         std::vector<float> chunkData;
+        int xPos, zPos;
 		unsigned int VAO;
 		unsigned int VBO;
 		unsigned int facesCount;

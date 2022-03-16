@@ -29,15 +29,12 @@ void World::addNearbyChunks(glm::vec3 location)
 		{
 			if (addChunkAtLocation(xPos+x, zPos+z))
 			{
-				newChunks = true;
+				// Hmmmmmm
+				int a;
+				glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, &a);
+				//std::cout << a << std::endl;
 			}
 		}
-	}
-	if (newChunks)
-	{
-		generateCubeDatas();
-		fillConnectingCubes();
-		generateMeshes();
 	}
 }
 
@@ -47,6 +44,9 @@ bool World::addChunkAtLocation(int xPos, int zPos)
 			return false;
 
 	Chunk* chunk = new Chunk(xPos, zPos, noise);
+	chunk->generateCubeData();
+	chunk->fillConnectingCubes();
+	chunk->generateMesh();
 	worldChunks.insert(std::make_pair(std::make_pair(xPos, zPos), chunk));
 	return true;
 }
@@ -70,45 +70,5 @@ void World::deleteFarChunks(int xPos, int zPos)
 		{
 			++it;
 		}
-	}
-}
-
-void World::generateCubeDatas()
-{
-	std::map<std::pair<int, int>, Chunk*>::iterator it = worldChunks.begin();
-	while (it != worldChunks.end())
-	{
-		if (!it->second->generatedData)
-		{
-			it->second->generateCubeData();
-		}
-		it++;
-	}
-}
-
-void World::fillConnectingCubes()
-{
-	std::map<std::pair<int, int>, Chunk*>::iterator it = worldChunks.begin();
-	while (it != worldChunks.end())
-	{
-		if (!it->second->filledConnectingCubes)
-		{
-			it->second->fillConnectingCubes(worldChunks);
-		}
-		it++;
-	}
-}
-
-void World::generateMeshes()
-{
-	std::map<std::pair<int, int>, Chunk*>::iterator it = worldChunks.begin();
-	while (it != worldChunks.end())
-	{
-		if (it->second->VBO == 0)
-		{
-			it->second->generateMesh();
-		}
-
-		it++;
 	}
 }
