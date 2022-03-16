@@ -4,7 +4,7 @@
 ![image](https://i.imgur.com/a5hFmsd.png)
 
 ### Project goal
-~~Have a infinite procedurally generated world\~~
+~~Have a infinite procedurally generated world~~\
 Be able to destroy and place blocks\
 
 ### Todo  
