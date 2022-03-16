@@ -28,7 +28,9 @@ void World::addNearbyChunks(glm::vec3 location)
 		for (int z = -CHUNKS_NUM; z < CHUNKS_NUM; z++)
 		{
 			if (addChunkAtLocation(xPos+x, zPos+z))
+			{
 				newChunks = true;
+			}
 		}
 	}
 	if (newChunks)

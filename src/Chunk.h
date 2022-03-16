@@ -52,5 +52,7 @@ class Chunk
 
     private:
         void addCube(bool backface, bool bottomface, bool leftface, bool frontface, bool topface, bool rightface, int x, int y, int z, int texId, std::vector<float> &chunkData);
+		FastNoiseLite noise;
+		int generatePerlin(int x, int y, int z, int xPos, int zPos);
 };
 

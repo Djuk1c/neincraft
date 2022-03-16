@@ -1,7 +1,20 @@
 #include "Chunk.h"
 
+int Chunk::generatePerlin(int x, int y, int z, int xPos, int zPos)
+{
+	if (y == 0)
+		return block_water;
+	float smoothness = 2.0f;
+	float val = noise.GetNoise(((float)x + (CHUNK_SIZE * xPos)) / smoothness, ((float)z + (CHUNK_SIZE * zPos)) / smoothness);
+	val *= 50;     // Add more height
+	if (val + y < 4)
+		return block_dirt;
+	return block_air;
+}
+
 Chunk::Chunk(int x, int z, FastNoiseLite &noise)
 {
+	this->noise = noise;
 	facesCount = 0;
 	VAO = 0;
 	VBO = 0;
@@ -31,11 +44,7 @@ Chunk::Chunk(int x, int z, FastNoiseLite &noise)
         {
             for (int y = 0; y < CHUNK_HEIGHT; y++)
             {
-				float smoothness = 2.0f;
-				float val = noise.GetNoise(((float)x + (CHUNK_SIZE * xPos)) / smoothness, ((float)z + (CHUNK_SIZE * zPos)) / smoothness);
-                val *= 50;     // Add more height
-                if (val + y < 4)
-                    chunk[x][y][z] = block_dirt;
+				chunk[x][y][z] = generatePerlin(x, y, z, xPos, zPos);
             }
         }
     }
@@ -74,7 +83,7 @@ void Chunk::generateCubeData()
 	generatedData = true;
 }
 
-void Chunk::fillConnectingCubes(std::map<std::pair<int, int>, Chunk*> &worldChunks)
+void Chunk::fillConnectingCubes(std::map<std::pair<int, int>, Chunk*> &worldChunks)			// TODO: Rewrite this clusterfuck please
 {
 	bool left  = worldChunks.find(std::make_pair(xPos-1, zPos)) != worldChunks.end();
 	bool right = worldChunks.find(std::make_pair(xPos+1, zPos)) != worldChunks.end();
@@ -89,30 +98,46 @@ void Chunk::fillConnectingCubes(std::map<std::pair<int, int>, Chunk*> &worldChun
             {
 				if (chunk[x][y][z] == block_dirt)
 				{
-					if (x == CHUNK_SIZE-1 && right)
+					if (x == CHUNK_SIZE-1)
 					{
-						if (worldChunks.at({xPos+1, zPos})->chunk[0][y][z] == block_air)
+						if (right && worldChunks.at({xPos+1, zPos})->chunk[0][y][z] == block_air)
+						{
+							data[x][y][z].rightface = true;
+						}
+						else if (generatePerlin(0, y, z, xPos+1, zPos) == block_air)
 						{
 							data[x][y][z].rightface = true;
 						}
 					}	
-					if (x == 0 && left)
+					if (x == 0)
 					{
-						if (worldChunks.at({xPos-1, zPos})->chunk[CHUNK_SIZE-1][y][z] == block_air)
+						if (left && worldChunks.at({xPos-1, zPos})->chunk[CHUNK_SIZE-1][y][z] == block_air)
+						{
+							data[x][y][z].leftface = true;
+						}
+						else if (generatePerlin(CHUNK_SIZE-1, y, z, xPos-1, zPos) == block_air)
 						{
 							data[x][y][z].leftface = true;
 						}
 					}	
-					if (z == CHUNK_SIZE-1 && back)
+					if (z == CHUNK_SIZE-1)
 					{
-						if (worldChunks.at({xPos, zPos+1})->chunk[x][y][0] == block_air)
+						if (back && worldChunks.at({xPos, zPos+1})->chunk[x][y][0] == block_air)
+						{
+							data[x][y][z].backface = true;
+						}
+						else if (generatePerlin(x, y, 0, xPos, zPos+1) == block_air)
 						{
 							data[x][y][z].backface = true;
 						}
 					}	
-					if (z == 0 && front)
+					if (z == 0)
 					{
-						if (worldChunks.at({xPos, zPos-1})->chunk[x][y][CHUNK_SIZE-1] == block_air)
+						if (front && worldChunks.at({xPos, zPos-1})->chunk[x][y][CHUNK_SIZE-1] == block_air)
+						{
+							data[x][y][z].frontface = true;
+						}
+						else if (generatePerlin(x, y, CHUNK_SIZE-1, xPos, zPos-1) == block_air)
 						{
 							data[x][y][z].frontface = true;
 						}
@@ -127,7 +152,6 @@ void Chunk::fillConnectingCubes(std::map<std::pair<int, int>, Chunk*> &worldChun
 
 void Chunk::generateMesh()
 {
-
     for (int x = 0; x < CHUNK_SIZE; x++)
     {
         for (int z = 0; z < CHUNK_SIZE; z++)

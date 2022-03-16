@@ -1,11 +1,12 @@
-# Neinkraft
-(Not) a minecraft clone written with C++ & OpenGL. In development. 
-![image](https://i.imgur.com/hyVcmiy.png)\
+# Neincraft
+Minecraft clone written with C++ & OpenGL.\ 
+In development. 
+![image](https://i.imgur.com/0zWcM7b.png)\
 ![image](https://i.imgur.com/a5hFmsd.png)
 
 ### Project goal
 ~~Have a infinite procedurally generated world~~\
-Be able to destroy and place blocks\
+Be able to destroy and place blocks
 
 ### Todo  
 Seperate thread for loading chunks\
