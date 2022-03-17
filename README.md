@@ -1,7 +1,7 @@
 # Neincraft
 Minecraft clone written with C++ & OpenGL, in development. 
-![image](https://i.imgur.com/0zWcM7b.png)\
-![image](https://i.imgur.com/a5hFmsd.png)
+![image](https://i.imgur.com/lhc6joh.png)\
+![image](https://i.imgur.com/lhc6joh.png)
 
 ### Project goal
 ~~Have a infinite procedurally generated world~~\

@@ -79,6 +79,7 @@ int main()
     glBindTexture(GL_TEXTURE_2D, texAtlas);
 
     glUniform2fv(uAtlasTexCoord, 1, glm::value_ptr(glm::vec2(1.0, 0.0)));
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
 
     // Render Loop
     while (!glfwWindowShouldClose(window))
