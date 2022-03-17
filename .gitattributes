@@ -1,0 +1,3 @@
+src/FastNoiseLite.h -linguist-vendored
+src/stb_image.cpp -linguist-vendored
+src/stb_image.h -linguist-vendored

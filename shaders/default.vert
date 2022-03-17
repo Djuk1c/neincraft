@@ -16,7 +16,7 @@ uniform mat4 projection;
 
 // Fog
 out float visibility;
-const float density = 0.008;
+const float density = 0.007;
 const float gradient = 8.2;
 
 void main()

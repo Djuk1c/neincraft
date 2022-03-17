@@ -10,6 +10,7 @@ Be able to destroy and place blocks
 ### Todo  
 Seperate thread for loading chunks\
 Maybe hashmap instead of set for storing chunks?\
+Highlight block when mousing over it (also for placing blocks)\
 ~~Play around with perlin parameters more to make it look more natural (Looks solid)~~\
 ~~Remove faces between chunks, and other faces that cant be seen~~\
 ~~Fix bug at spawn when there are 2x more chunks (Hacky)~~\
