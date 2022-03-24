@@ -5,7 +5,7 @@ Minecraft clone written with C++ & OpenGL, in development.
 
 ### Project goal
 ~~Have a infinite procedurally generated world~~\
-Be able to destroy and place blocks
+~~Be able to destroy~~ and place blocks
 
 ### Todo  
 Seperate thread for loading chunks\
