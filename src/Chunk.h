@@ -27,26 +27,47 @@ class Chunk
 				topface = false;
 				rightface = false;
 			}
+			void fillAll()
+			{
+				backface = true;
+				bottomface = true;
+				leftface = true;
+				frontface = true;
+				topface = true;
+				rightface = true;
+			}
+			void clearAll()
+			{
+				backface = false;
+				bottomface = false;
+				leftface = false;
+				frontface = false;
+				topface = false;
+				rightface = false;
+			}
 		};
     public:
-        Chunk(int x, int z, FastNoiseLite &noise);
+        Chunk(int x, int z, FastNoiseLite &noise, std::map<std::pair<int, int>, Chunk*> *worldChunks);
 		~Chunk();
 		void generateCubeData();
 		void fillConnectingCubes();
         void generateMesh();
 		void generateVBO();
+		void updateVBO();
+		void addTree();
 
-        int chunk[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE];
-		cubeData data[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE];
+        int chunk[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE];		// Perlin
+		cubeData faces[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE];	// Faces
 
-        std::vector<float> chunkData;
+        std::vector<float> chunkData;							// Vertex data
         int xPos, zPos;
 		unsigned int VAO;
 		unsigned int VBO;
 		unsigned int facesCount;
+		std::map<std::pair<int, int>, Chunk*> *worldChunks;
         enum blocks
         {
-            block_air, block_dirt, block_water
+            block_air, block_dirt, block_dirtNoGrass, block_water, block_tree, block_leaves
         };
 
     private:

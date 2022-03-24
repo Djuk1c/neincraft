@@ -26,7 +26,7 @@ void main()
 	visibility = exp(-pow((distance*density), gradient));
 	visibility = clamp(visibility, 0.0, 1.0);
 
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    gl_Position = projection * positionRelativeToCam;
     TexCoord = aTexCoord;
     Light = aLight;
     Index = aIndex;

@@ -12,8 +12,9 @@ int Chunk::generatePerlin(int x, int y, int z, int xPos, int zPos)
 	return block_air;
 }
 
-Chunk::Chunk(int x, int z, FastNoiseLite &noise)
+Chunk::Chunk(int x, int z, FastNoiseLite &noise, std::map<std::pair<int, int>, Chunk*> *worldChunks)
 {
+	this->worldChunks = worldChunks;
 	this->noise = noise;
 	facesCount = 0;
 	VAO = 0;
@@ -52,7 +53,7 @@ Chunk::~Chunk()
 {
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-	std::cout << "Deleted chunk X:" << xPos << " Z:" << zPos << std::endl;
+	//std::cout << "Deleted chunk X:" << xPos << " Z:" << zPos << std::endl;
 }
 
 void Chunk::generateCubeData()
@@ -73,11 +74,63 @@ void Chunk::generateCubeData()
                     if (y > 0) newCube.bottomface = chunk[x][y - 1][z] == 0;
                     if (y < CHUNK_HEIGHT - 1) newCube.topface = chunk[x][y + 1][z] == 0;
 
-					data[x][y][z] = newCube;
+					faces[x][y][z] = newCube;
                 }
             }
         }
     }
+	//addTree();
+}
+
+void Chunk::addTree()			// TODO: Temporary, rewrite
+{
+	int rx = rand() % 16;
+	int rz = rand() % 16;
+	int startY;
+	int height = rand()%(7-4 + 1) + 4;
+	if (rand()%3 != 1 || chunk[rx][1][rz] != block_dirt || rx-2<0 || rx+2>CHUNK_SIZE-1 || rz-2<0 || rz+2>CHUNK_SIZE-1)
+		return;
+	
+	for (int y = 0; y < CHUNK_HEIGHT; y++)
+	{
+		if (chunk[rx][y][rz] == block_air)
+		{
+			startY = y;
+			break;
+		}
+	}
+	for (int y = startY; y < startY+height; y++)
+	{
+		cubeData newCube;
+		newCube.fillAll();
+		newCube.topface = false;
+		newCube.bottomface = false;
+		chunk[rx][y][rz] = block_tree;
+		faces[rx][y][rz] = newCube;
+	}
+    for (int x = rx-2; x <= rx+2; x++)
+    {
+        for (int z = rz-2; z <= rz+2; z++)
+        {
+            for (int y = startY+height; y < startY+height+3; y++)
+            {
+				cubeData newCube;
+				newCube.fillAll();
+				chunk[x][y][z] = block_leaves;
+				faces[x][y][z] = newCube;
+			}
+		}
+	}
+    for (int x = rx-1; x <= rx+1; x++)
+    {
+        for (int z = rz-1; z <= rz+1; z++)
+        {
+			cubeData newCube;
+			newCube.fillAll();
+			chunk[x][startY+height+3][z] = block_leaves;
+			faces[x][startY+height+3][z] = newCube;
+		}
+	}
 }
 
 void Chunk::fillConnectingCubes()
@@ -91,13 +144,13 @@ void Chunk::fillConnectingCubes()
 				if (chunk[x][y][z] == block_dirt)
 				{
 					if (x == CHUNK_SIZE-1 && generatePerlin(0, y, z, xPos+1, zPos) == block_air)
-						data[x][y][z].rightface = true;
+						faces[x][y][z].rightface = true;
 					if (x == 0 && generatePerlin(CHUNK_SIZE-1, y, z, xPos-1, zPos) == block_air)
-						data[x][y][z].leftface = true;
+						faces[x][y][z].leftface = true;
 					if (z == CHUNK_SIZE-1 && generatePerlin(x, y, 0, xPos, zPos+1) == block_air)
-						data[x][y][z].backface = true;
+						faces[x][y][z].backface = true;
 					if (z == 0 && generatePerlin(x, y, CHUNK_SIZE-1, xPos, zPos-1) == block_air)
-						data[x][y][z].frontface = true;
+						faces[x][y][z].frontface = true;
 				}
 			}
 		}
@@ -112,11 +165,49 @@ void Chunk::generateMesh()
         {
             for (int y = 0; y < CHUNK_HEIGHT; y++)
             {
-                    addCube(data[x][y][z].backface, data[x][y][z].bottomface, data[x][y][z].leftface, data[x][y][z].frontface, data[x][y][z].topface, data[x][y][z].rightface, x + (xPos * CHUNK_SIZE), y, z + (zPos * CHUNK_SIZE), chunk[x][y][z], chunkData);
+                    addCube(faces[x][y][z].backface, faces[x][y][z].bottomface, faces[x][y][z].leftface, faces[x][y][z].frontface, faces[x][y][z].topface, faces[x][y][z].rightface, x + (xPos * CHUNK_SIZE), y, z + (zPos * CHUNK_SIZE), chunk[x][y][z], chunkData);
 			}
 		}
 	}
 	generateVBO();
+}
+
+void Chunk::updateVBO()
+{
+	chunkData.clear();
+    for (int x = 0; x < CHUNK_SIZE; x++)
+        for (int z = 0; z < CHUNK_SIZE; z++)
+            for (int y = 0; y < CHUNK_HEIGHT; y++)
+				faces[x][y][z].clearAll(); 
+
+	generateCubeData();
+	// Fill connecting cubes
+    for (int x = 0; x < CHUNK_SIZE; x++)
+    {
+        for (int z = 0; z < CHUNK_SIZE; z++)
+        {
+            for (int y = 0; y < CHUNK_HEIGHT; y++)
+            {
+				if (chunk[x][y][z] == block_dirt)
+				{
+					if (x == CHUNK_SIZE-1 && worldChunks->at(std::make_pair(xPos+1, zPos))->chunk[0][y][z] == block_air)
+						faces[x][y][z].rightface = true;
+					if (x == 0 && worldChunks->at(std::make_pair(xPos-1, zPos))->chunk[CHUNK_SIZE-1][y][z] == block_air)
+						faces[x][y][z].leftface = true;
+					if (z == CHUNK_SIZE-1 && worldChunks->at(std::make_pair(xPos, zPos+1))->chunk[x][y][0] == block_air)
+						faces[x][y][z].backface = true;
+					if (z == 0 && worldChunks->at(std::make_pair(xPos, zPos-1))->chunk[x][y][CHUNK_SIZE-1] == block_air)
+						faces[x][y][z].frontface = true;
+				}
+			}
+		}
+	}
+	generateMesh();
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, chunkData.size() * sizeof(float), &chunkData.front(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 void Chunk::generateVBO()

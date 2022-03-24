@@ -19,48 +19,53 @@ const int SCREEN_WIDTH = 1600;
 const int SCREEN_HEIGHT = 900;
 
 // Forward delcarations
+glm::vec3 calculateRayCast();
+void breakBlock();
 void calculateDeltaTime(double time);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void processInput(GLFWwindow *window);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 unsigned int loadTexture(char const *filename);
 void checkFPS();
 
-// Deltatime
+// Vars
 int nbFrames = 0;
 double lastTime = glfwGetTime();
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
-
-// Camera
-Camera camera(glm::vec3(256.0f, 100.0f, 256.0f));
-float lastX = (float)SCREEN_WIDTH/2, lastY = (float)SCREEN_HEIGHT/2;
+float lastX = (float)SCREEN_WIDTH/2, lastY = (float)SCREEN_HEIGHT/2;	//cam
 bool firstMouse = true;
+
+// Classes
+Camera camera(glm::vec3(0.0f, 100.0f, 0.0f));
+Window mainWindow(SCREEN_WIDTH, SCREEN_HEIGHT);
+World world;
+
+// Matrixes
+glm::mat4 view = glm::mat4(1.0f);
+glm::mat4 model = glm::mat4(1.0f);
+glm::mat4 projection = glm::perspective(glm::radians(70.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 1000.0f);
 
 int main()
 {
-	Window mainWindow(SCREEN_WIDTH, SCREEN_HEIGHT);
 	GLFWwindow* window = mainWindow.window;
 
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetKeyCallback(window, key_callback);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     // Create default shader
     unsigned int shaderProgram = LoadShader("shaders/default.vert", "shaders/default.frag");
 
     // Creating our mesh from the chunk data
 	srand(time(NULL));
-    World world;
     world.generateWorld(camera.Position);
 
     // Load and generate textures
     unsigned int texAtlas = loadTexture("textures/atlas.png");
 
-	// Matrixes
-    glm::mat4 view = glm::mat4(1.0f);
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 projection = glm::perspective(glm::radians(70.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 1000.0f);
 
     // Uniform Locations
     glUseProgram(shaderProgram);
@@ -87,7 +92,7 @@ int main()
 		// TODO: Frustum culling?
 
         glUseProgram(shaderProgram);
-        checkFPS();
+        //checkFPS();
         calculateDeltaTime(glfwGetTime());
         processInput(window);
 
@@ -106,7 +111,6 @@ int main()
 		while (it != world.worldChunks.end())
 		{
 			glBindVertexArray(it->second->VAO);
-			// 6 vertices / face (should probably implement EBO, dis waste of memory (good enough!))
 			glDrawArrays(GL_TRIANGLES, 0, it->second->facesCount*6);
 			it++;
 		}
@@ -119,17 +123,73 @@ int main()
     return 0;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+//---------Functions---------//
+// https://stackoverflow.com/questions/40276068/opengl-raycasting-with-any-object
+// https://antongerdelan.net/opengl/raycasting.html
+glm::vec3 calculateRayCast()
+{
+    glm::vec3 rayNds = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec4 rayClip = glm::vec4(rayNds, 1.0);
+    glm::vec4 rayEye = glm::inverse(projection) * rayClip;
+    rayEye = glm::vec4(rayEye.x,rayEye.y, -1.0, 0.0);
+    glm::vec3 rayWorld = glm::vec3(glm::inverse(view) * rayEye);
+    rayWorld = glm::normalize(rayWorld);
+	return rayWorld;
+}
+
+void breakBlock()				// Doesnt work when breaking blocks nearing other chunks
+{
+	int maxDistance = 4;
+	glm::vec3 ray = calculateRayCast();
+	glm::vec3 start = camera.Position;
+	for (int i = 0; i <= maxDistance; i++)
+	{
+		glm::vec3 scaledRay(ray.x*(float)i, ray.y*(float)i, ray.z*(float)i);
+		glm::vec3 point = start + scaledRay;
+
+		int xPos = (int)ceil(point.x / 16) - 1;
+		int zPos = (int)ceil(point.z / 16) - 1;
+
+		if (world.worldChunks.find(std::make_pair(xPos, zPos)) == world.worldChunks.end() || point.y > 64.0f)
+			continue;
+
+		int xBlock = abs((int)round(point.x) % 16);
+		int yBlock = abs((int)round(point.y));
+		int zBlock = abs((int)round(point.z) % 16);
+		if (camera.Position.x < 0)
+		{
+			xBlock = abs(16-xBlock);
+		}
+		if (camera.Position.z < 0)
+		{
+			zBlock = abs(16-zBlock);
+		}
+
+		if (world.worldChunks.at(std::make_pair(xPos, zPos))->chunk[xBlock][yBlock][zBlock] == 1)
+		{
+			printf("Camera pos: %f, %f, %f\n", camera.Position.x, camera.Position.y, camera.Position.z);
+			printf("Break %d, %d, %d\n", xBlock, yBlock, zBlock);
+			world.worldChunks.at(std::make_pair(xPos, zPos))->chunk[xBlock][yBlock][zBlock] = 0;
+			world.worldChunks.at(std::make_pair(xPos, zPos))->updateVBO();
+
+			world.worldChunks.at(std::make_pair(xPos+1, zPos))->updateVBO();
+			world.worldChunks.at(std::make_pair(xPos-1, zPos))->updateVBO();
+			world.worldChunks.at(std::make_pair(xPos, zPos+1))->updateVBO();
+			world.worldChunks.at(std::make_pair(xPos, zPos-1))->updateVBO();
+			break;
+		}
+	}
+}
 
 void checkFPS()
 {
     double currentTime = glfwGetTime();
     nbFrames++;
-    if (currentTime - lastTime >= 2.0 )
+    if (currentTime - lastTime >= 1.0 )
     {
-        std::cout << nbFrames / 2 << std::endl;
+        std::cout << nbFrames << std::endl;
         nbFrames = 0;
-        lastTime += 2.0;
+        lastTime += 1.0;
     }
 }
 
@@ -181,21 +241,12 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
-void processInput(GLFWwindow *window)
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(window, true);
-    }
-    // Camera
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+    if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+		breakBlock();
+    if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+		placeBlock();
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -208,4 +259,20 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     if (key == GLFW_KEY_F2 && action == GLFW_PRESS)
         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+}
+
+void processInput(GLFWwindow *window)
+{
+    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+	
+    // Camera
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.ProcessKeyboard(RIGHT, deltaTime);
 }

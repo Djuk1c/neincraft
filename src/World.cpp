@@ -26,13 +26,9 @@ void World::addNearbyChunks(glm::vec3 location)
 	{
 		for (int z = -CHUNKS_NUM; z < CHUNKS_NUM; z++)
 		{
+			// Generating only one per frame
 			if (addChunkAtLocation(xPos+x, zPos+z))
-			{
-				// Hmmmmmm
-				int a;
-				glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, &a);
-				//std::cout << a << std::endl;
-			}
+				return;
 		}
 	}
 }
@@ -42,7 +38,7 @@ bool World::addChunkAtLocation(int xPos, int zPos)
 	if (worldChunks.find(std::make_pair(xPos, zPos)) != worldChunks.end())
 			return false;
 
-	Chunk* chunk = new Chunk(xPos, zPos, noise);
+	Chunk* chunk = new Chunk(xPos, zPos, noise, &worldChunks);
 	chunk->generateCubeData();
 	chunk->fillConnectingCubes();
 	chunk->generateMesh();
